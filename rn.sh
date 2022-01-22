@@ -209,7 +209,6 @@ mode_diff() {
 				exit_code=$?
 				if [ $exit_code -ne 0 ]; then
 					echo "  output of target '${programs[$i]}' was different from previous target(s) output(s)"
-					rm out_prv_
 					exit
 				fi
 				rm out_prv_
@@ -272,7 +271,6 @@ mode_diff_val() {
 				exit_code=$?
 				if [ $exit_code -ne 0 ]; then
 					echo "  output of target '${programs[$i]}' was different from previous targets outputs"
-					rm out_prv_
 					exit
 				fi
 				rm out_prv_
