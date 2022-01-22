@@ -132,39 +132,25 @@ help() {
 }
 
 diff_script() {
-	readarray -t s_prv < out_prv_
-	readarray -t s_now < out_
-	for (( ii=0; ii<${#s_now[@]}; ii++ ))
-	do
-		if [ $ii -ge ${#s_prv[@]} ]; then
-			ii=$(( ii + 1 ))
-			echo "diff at [$ii:-1]"
-			return 1
-		fi
-		s_cur_prv=${s_prv[$ii]}
-		s_cur_now=${s_now[$ii]}
-		if [ ${#s_cur_now} -ne ${#s_cur_prv} ]; then
-			len=$(( ${#s_cur_now} < ${#s_cur_prv} ? ${#s_cur_now} : ${#s_cur_prv} ))
-			ii=$(( ii + 1 ))
-			len=$(( len - 1 ))
-			echo "diff at [$ii:$len]"
-			return 1
-		fi
-		for (( jj=0; jj<${#s_cur_now}; jj++ ))
-		do
-			if [ ${s_cur_now:$jj:1} != ${s_cur_prv:$jj:1} ]; then
-				ii=$(( ii + 1 ))
-				echo "diff at [$ii:$jj]"
-				return 1
-			fi
-		done
-	done
-	if [ ${#s_now[@]} -lt ${#s_prv[@]} ]; then
-		i=$(( ${#s_now[@]} + 1 ))
-		echo "diff at [$ii:-1]"
-		return 1
+	df=$(diff out_prv_ out_ | head -n 2)
+	if [ ${#df} -eq 0 ]; then
+		return 0
 	fi
-	return 0
+	ep="diff at ["
+	for (( ii=0; ii<${#df}; ii++ ))
+	do
+		re='^[0-9]+$'
+		if [ "${df:$ii:1}" = "c" ]; then
+			ep="${ep}:"
+		elif ! [[ "${df:$ii:1}" =~ $re ]]; then
+			break
+		else
+			ep="${ep}${df:$ii:1}"
+		fi
+	done
+	ep="${ep}]"
+	echo "$ep"
+	return 1
 }
 
 mode_diff() {
