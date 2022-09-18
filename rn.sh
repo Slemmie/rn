@@ -177,7 +177,12 @@ mode_diff() {
 				cat > out_prv_ < out_
 			fi
 			time_elapsed=$(date +%s%N)
-			./"${programs[$i]}" < in_ > "out_"
+			extension="${programs[$i]##*.}"
+			if [ "$extension" == "py" ]; then
+				python3 "${programs[$i]}" < in_ > "out_"
+			else
+				./"${programs[$i]}" < in_ > "out_"
+			fi
 			exit_code=$?
 			time_elapsed=$(( ($(date +%s%N) - $time_elapsed) / 1000000 ))
 			if [ $exit_code -ne 0 ]; then
@@ -239,7 +244,12 @@ mode_diff_val() {
 				cat > out_prv_ < out_
 			fi
 			time_elapsed=$(date +%s%N)
-			./"${programs[$i]}" < in_ > "out_"
+			extension="${programs[$i]##*.}"
+			if [ "$extension" == "py" ]; then
+				python3 "${programs[$i]}" < in_ > "out_"
+			else
+				./"${programs[$i]}" < in_ > "out_"
+			fi
 			exit_code=$?
 			time_elapsed=$(( ($(date +%s%N) - $time_elapsed) / 1000000 ))
 			if [ $exit_code -ne 0 ]; then
@@ -301,7 +311,12 @@ mode_val_single() {
 			exit
 		fi
 		time_elapsed=$(date +%s%N)
-		./"${programs[0]}" < in_ > out_
+		extension="${programs[$i]##*.}"
+			if [ "$extension" == "py" ]; then
+				python3 "${programs[$i]}" < in_ > "out_"
+			else
+				./"${programs[$i]}" < in_ > "out_"
+			fi
 		exit_code=$?
 		time_elapsed=$(( ($(date +%s%N) - $time_elapsed) / 1000000 ))
 		if [ $exit_code -ne 0 ]; then
@@ -350,7 +365,12 @@ mode_val_multi() {
 		for (( i=0; i<${#programs[@]}; i++ ))
 		do
 			time_elapsed=$(date +%s%N)
-			./"${programs[$i]}" < in_ > "out_"
+			extension="${programs[$i]##*.}"
+			if [ "$extension" == "py" ]; then
+				python3 "${programs[$i]}" < in_ > "out_"
+			else
+				./"${programs[$i]}" < in_ > "out_"
+			fi
 			exit_code=$?
 			time_elapsed=$(( ($(date +%s%N) - $time_elapsed) / 1000000 ))
 			if [ $exit_code -ne 0 ]; then
@@ -400,7 +420,12 @@ mode_single() {
 			exit
 		fi
 		time_elapsed=$(date +%s%N)
-		./"${programs[0]}" < in_ > out_
+		extension="${programs[$i]##*.}"
+			if [ "$extension" == "py" ]; then
+				python3 "${programs[$i]}" < in_ > "out_"
+			else
+				./"${programs[$i]}" < in_ > "out_"
+			fi
 		exit_code=$?
 		time_elapsed=$(( ($(date +%s%N) - $time_elapsed) / 1000000 ))
 		if [ $exit_code -ne 0 ]; then
@@ -442,7 +467,12 @@ mode_multi() {
 		for (( i=0; i<${#programs[@]}; i++ ))
 		do
 			time_elapsed=$(date +%s%N)
-			./"${programs[$i]}" < in_ > "out_"
+			extension="${programs[$i]##*.}"
+			if [ "$extension" == "py" ]; then
+				python3 "${programs[$i]}" < in_ > "out_"
+			else
+				./"${programs[$i]}" < in_ > "out_"
+			fi
 			exit_code=$?
 			time_elapsed=$(( ($(date +%s%N) - $time_elapsed) / 1000000 ))
 			if [ $exit_code -ne 0 ]; then
