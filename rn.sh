@@ -6,6 +6,7 @@ iterations=-1
 main() {
 	help=0
 	default_diff=0
+	clean=0
 	
 	for (( i=0; i<=$#; i++ ))
 	do
@@ -35,13 +36,20 @@ main() {
 			fi
 			i=$(( i + 1 ))
 			iterations="${!i}"
-		elif [ $i -gt 0 ]; then # TODO: check if this is needed
+		elif [ "$ag" = "-c" ] || [ "$ag" = "--clean" ]; then
+			clean=1
+		elif [ $i -gt 0 ]; then
 			programs+=( "$ag" )
 		fi
 	done
 	
 	if [ $help -eq 1 ]; then
 		help
+		exit
+	fi
+	
+	if [ $clean -eq 1 ]; then
+		rm -f in_ out_ out_prv_ val_out_
 		exit
 	fi
 	
@@ -110,25 +118,29 @@ main() {
 }
 
 help() {
-	echo " -- help --"
+	echo " -- rn help --"
 	echo "  "
 	echo "  usage:"
 	echo "  $ rn {flags}"
 	echo "  "
 	echo "  '-h' or '--help', prints this message"
+	echo "  '-c' or '--clean', removes temporary potentially stray files such as 'in_'/'out_'/etc."
 	echo "  '-g', '--gen' or '--generator', specify a generator, following this should be a path to the generator"
 	echo "  '-v', '--val' or '--validator', specify a validator, following this should be a path to the validator"
 	echo "  '-d', '--dif' or '--diff', use diff mode as well"
 	echo "  '-t', '--tests' or '--testcount', specify a number of tests to run, following this should be a positive integer, default is infinity"
 	echo "  any other argument will be interpreted as an executable to add to the list of targets"
 	echo "  "
+	echo "  generator: should print generated input to stdout"
+	echo "  validator: executed as '$ ./{path} input_test_case executable_output' - non-zero exit code signals failed validation"
+	echo "  diff mode: must specify more than one executable - testing is terminated if any two executables have different output"
+	echo "  executables to be tested: should read input from stdin and print output to stdout"
+	echo "  "
 	echo "  any number of executables can be specified"
-	echo "  exactly one generator and at most one validator may be used"
-	echo "  if no validator or 'diff' mode is specified, the mode will be defaulted to testing whether the target(s) crash, as well as their execution time"
-	echo "  validator will be executed with '$ ./{path} infile outfile', specifying the input file used for a target as well as the targets output"
-	echo "  exit code 0 from the validator will signal that the output was valid and the script will continue"
-	echo "  the generator should print resulting input file to stdout"
-	echo "  all targets should print output to stdout and read from stdin"
+	echo "  exactly one generator may be specified"
+	echo "  at most one validator may be specified"
+	echo "  if no validator or diff mode is specified, default to running all input files and test for execution time and crashes"
+	echo "  execution time and crashes are tested in any mode"
 }
 
 diff_script() {
@@ -216,8 +228,7 @@ mode_diff() {
 		fi
 		echo "  average execution time: ${avg_time[$i]}ms"
 	done
-	touch in_ out_ val_out_
-	rm in_ out_ val_out_
+	rm -f in_ out_ out_prv_ val_out_
 }
 
 mode_diff_val() {
@@ -240,7 +251,7 @@ mode_diff_val() {
 		fi
 		for (( i=0; i<${#programs[@]}; i++ ))
 		do
-			if [ i -ne 0 ]; then
+			if [ $i -ne 0 ]; then
 				cat > out_prv_ < out_
 			fi
 			time_elapsed=$(date +%s%N)
@@ -262,7 +273,7 @@ mode_diff_val() {
 			echo "  target '${programs[$i]}' execution time: ${time_elapsed}ms"
 			max_time[$i]=$(( max_time[$i] > $time_elapsed ? max_time[$i] : $time_elapsed ))
 			avg_time[$i]=$(( avg_time[$i] + $time_elapsed ))
-			if [ i -ne 0 ]; then
+			if [ $i -ne 0 ]; then
 				diff_script
 				exit_code=$?
 				if [ $exit_code -ne 0 ]; then
@@ -290,8 +301,7 @@ mode_diff_val() {
 		fi
 		echo "  average execution time: ${avg_time[$i]}ms"
 	done
-	touch in_ out_ val_out_
-	rm in_ out_ val_out_
+	rm -f in_ out_ out_prv_ val_out_
 }
 
 mode_val_single() {
@@ -311,12 +321,12 @@ mode_val_single() {
 			exit
 		fi
 		time_elapsed=$(date +%s%N)
-		extension="${programs[$i]##*.}"
-			if [ "$extension" == "py" ]; then
-				python3 "${programs[$i]}" < in_ > "out_"
-			else
-				./"${programs[$i]}" < in_ > "out_"
-			fi
+		extension="${programs[0]##*.}"
+		if [ "$extension" == "py" ]; then
+			python3 "${programs[0]}" < in_ > "out_"
+		else
+			./"${programs[0]}" < in_ > "out_"
+		fi
 		exit_code=$?
 		time_elapsed=$(( ($(date +%s%N) - $time_elapsed) / 1000000 ))
 		if [ $exit_code -ne 0 ]; then
@@ -340,8 +350,7 @@ mode_val_single() {
 		avg_time=$(( $avg_time / $test_count ))
 	fi
 	echo "average execution time: ${avg_time}ms"
-	touch in_ out_ val_out_
-	rm in_ out_ val_out_
+	rm -f in_ out_ out_prv_ val_out_
 }
 
 mode_val_multi() {
@@ -399,8 +408,7 @@ mode_val_multi() {
 		fi
 		echo "  average execution time: ${avg_time[$i]}ms"
 	done
-	touch in_ out_ val_out_
-	rm in_ out_ val_out_
+	rm -f in_ out_ out_prv_ val_out_
 }
 
 mode_single() {
@@ -420,12 +428,12 @@ mode_single() {
 			exit
 		fi
 		time_elapsed=$(date +%s%N)
-		extension="${programs[$i]##*.}"
-			if [ "$extension" == "py" ]; then
-				python3 "${programs[$i]}" < in_ > "out_"
-			else
-				./"${programs[$i]}" < in_ > "out_"
-			fi
+		extension="${programs[0]##*.}"
+		if [ "$extension" == "py" ]; then
+			python3 "${programs[0]}" < in_ > "out_"
+		else
+			./"${programs[0]}" < in_ > "out_"
+		fi
 		exit_code=$?
 		time_elapsed=$(( ($(date +%s%N) - $time_elapsed) / 1000000 ))
 		if [ $exit_code -ne 0 ]; then
@@ -442,8 +450,7 @@ mode_single() {
 		avg_time=$(( $avg_time / $test_count ))
 	fi
 	echo "average execution time: ${avg_time}ms"
-	touch in_ out_
-	rm in_ out_
+	rm -f in_ out_ out_prv_ val_out_
 }
 
 mode_multi() {
@@ -494,8 +501,7 @@ mode_multi() {
 		fi
 		echo "  average execution time: ${avg_time[$i]}ms"
 	done
-	touch in_ out_
-	rm in_ out_
+	rm -f in_ out_ out_prv_ val_out_
 }
 
 main "$@"
